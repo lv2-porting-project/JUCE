@@ -319,8 +319,11 @@ static const String makePluginFile (AudioProcessor* const filter, const int maxN
     }
 
     // Parameters
-    for (int i=0; i < filter->getParameters().size(); ++i)
+    const auto& parameters = filter->getParameters();
+    for (int i=0; i < parameters.size(); ++i)
     {
+        auto paramName = parameters[i]->getName (1024);
+
         if (i == 0)
             text += "    lv2:port [\n";
         else
@@ -328,21 +331,21 @@ static const String makePluginFile (AudioProcessor* const filter, const int maxN
 
         text += "        a lv2:InputPort, lv2:ControlPort ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
-        text += "        lv2:symbol \"" + nameToSymbol(filter->getParameterName(i), i) + "\" ;\n";
+        text += "        lv2:symbol \"" + nameToSymbol(paramName, i) + "\" ;\n";
 
-        if (filter->getParameterName(i).isNotEmpty())
-            text += "        lv2:name \"" + filter->getParameterName(i) + "\" ;\n";
+        if (paramName.isNotEmpty())
+            text += "        lv2:name \"" + paramName + "\" ;\n";
         else
             text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
 
-        text += "        lv2:default " + String::formatted("%f", safeParamValue(filter->getParameter(i))) + " ;\n";
+        text += "        lv2:default " + String::formatted("%f", safeParamValue(parameters[i]->getValue())) + " ;\n";
         text += "        lv2:minimum 0.0 ;\n";
         text += "        lv2:maximum 1.0 ;\n";
 
-        if (! filter->isParameterAutomatable(i))
+        if (! parameters[i]->isAutomatable())
             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
 
-        if (i+1 == filter->getParameters().size())
+        if (i+1 == parameters.size())
             text += "    ] ;\n\n";
         else
             text += "    ] ,\n";
@@ -434,15 +437,16 @@ static const String makePresetsFile (AudioProcessor* const filter)
         // Port values
         usedSymbols.clear();
 
-        for (int j=0; j < filter->getParameters().size(); ++j)
+        const auto& parameters = filter->getParameters();
+        for (int j=0; j < parameters.size(); ++j)
         {
               if (j == 0)
                 preset += "    lv2:port [\n";
             else
                 preset += "    [\n";
 
-            preset += "        lv2:symbol \"" + nameToSymbol(filter->getParameterName(j), j) + "\" ;\n";
-            preset += "        pset:value " + String::formatted("%f", safeParamValue(filter->getParameter(j))) + " ;\n";
+            preset += "        lv2:symbol \"" + nameToSymbol(parameters[i]->getName (1024), j) + "\" ;\n";
+            preset += "        pset:value " + String::formatted("%f", safeParamValue(parameters[i]->getValue())) + " ;\n";
 
             if (j+1 == filter->getParameters().size())
                 preset += "    ] ";
